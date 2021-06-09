@@ -1,5 +1,5 @@
-use kopoctc;
-drop procedure if exists resvstat_calc;
+use kopoctc;							#DB사용
+drop procedure if exists resvstat_calc;	#프로시저 존재하면 삭제
 delimiter $$
 create procedure resvstat_calc()		#예약상황 계산하는 프로시져 생성
 begin
@@ -12,7 +12,7 @@ begin
     set _date = now();
     set _cnt = 0;
     ####################################예약상황 보여주는 table 만들기
-    drop table if exists reserv_stat; #우선 테이블 삭제
+    drop table if exists reserv_stat; 	#우선 테이블 삭제
     create table reserv_stat(
 		reserve_date date not null,
         room1 varchar(20),
@@ -20,7 +20,8 @@ begin
         room3 varchar(20),
         primary key(reserve_date));		#p-key: 예약 날짜
         
-	###################################table에 데이터 insert 하기위한 반복문 
+	###################################table에 데이터 insert 하기위한 반복문
+    # 예약일에 해당 방번호로 이름을 조회했을 때 0이면 예약 가능으로 셋팅, 0보다 크면 해당 이름으로 셋팅
     _loop: loop
 		if (select count(name) from reservation where reserve_date=_date and room=1) = 0 then
 			set _room1 = "예약가능";
@@ -38,17 +39,15 @@ begin
 			set _room3 = "예약가능";
         else
 			set _room3 = (select name from reservation where reserve_date=_date and room=3);
-			
 		end if;
+        
 		#테이블에 인서트
         insert into reserv_stat values(_date, _room1, _room2, _room3);
-        #변수 초기화
-        set _room1 = "";
-        set _room2 = "";
-        set _room3 = "";
+     
         set _cnt = _cnt + 1;
         set _date = date_add(now(), interval +_cnt day);
-        #시간의 지금으로부터 한달이 차이가 나면
+        
+        #시간의 지금으로부터 한달이 차이가 나면 반복문 탈출
         if TIMESTAMPDIFF(MONTH, now(), _date) = 1  then
 			leave _loop;
 		end if;
